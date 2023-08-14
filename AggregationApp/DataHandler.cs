@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CsvHelper;
-using CsvHelper.Configuration.Attributes;
 
 namespace AggregationApp
 {
@@ -21,11 +20,11 @@ namespace AggregationApp
 
         public static async Task<List<ElectricityData>> CollectData()
         {
-            Console.WriteLine("Downloading data");
             List<ElectricityData> dataList = new();
 
             foreach (var path in dataPaths)
             {
+                Console.WriteLine("Downloading data");
                 Stream? data = await DataFetcher.DownloadData(path);
                 if (data == null)
                 {
@@ -33,66 +32,64 @@ namespace AggregationApp
                     throw new ArgumentException("Invalid url path: ", nameof(path));
                 }
 
-                List<ElectricityData> records = ConvertStream2List(data);
-                ProcessData(records);
-                dataList.AddRange(records);
+                List<ElectricityDataEntry> records = ConvertStream2List(data);
+                List<ElectricityData> processed = ProcessData(records);
+                dataList.AddRange(processed);
                 Console.WriteLine("Downloaded data");
             }
 
             return dataList;
         }
 
-        public static void ProcessData(List<ElectricityData> data)
+        public static List<AggregatedData> AggregateData(List<ElectricityData> data)
         {
-            FilterInvalidData(data);
-            FilterByObjName(data, "Butas");
+            List<AggregatedData> aData = new();
+            List<List<ElectricityData>> groupedData = data.GroupBy(entry => entry.Region).Select(group => group.ToList()).ToList();
+
+            foreach (var group in groupedData)
+            {
+                string region = group[0].Region;
+                aData.Add(group.Aggregate(new AggregatedData() { Region = region }, (agg, data) => agg.AddAggregation(data)));
+            }
+
+            return aData;
         }
 
-        private static List<ElectricityData> ConvertStream2List(Stream data)
+        private static List<ElectricityData> ProcessData(List<ElectricityDataEntry> data)
+        {
+            List<ElectricityData> validated = FilterInvalidData(data);
+            FilterByObjName(validated, "Butas");
+            
+            return validated;
+        }
+
+        private static List<ElectricityDataEntry> ConvertStream2List(Stream data)
         {
             using var reader = new StreamReader(data);
             using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-            return csv.GetRecords<ElectricityData>().ToList();
+            
+            return csv.GetRecords<ElectricityDataEntry>().ToList();
         }
 
-        private static void FilterInvalidData(List<ElectricityData> list)
+        private static List<ElectricityData> FilterInvalidData(List<ElectricityDataEntry> list)
         {
-            list.RemoveAll(entry => !entry.IsValid());
+            List<ElectricityData> filtered = new();
+
+            foreach (var entry in list)
+            {
+                ElectricityData? data = entry.TryConvertToValid();
+                if (data is ElectricityData valid)
+                {
+                    filtered.Add(valid);
+                }
+            }
+
+            return filtered;
         }
 
         private static void FilterByObjName(List<ElectricityData> list, string name)
         {
             list.RemoveAll(entry => entry.Obj_Name != name);
-        }
-    }
-
-    public class ElectricityData
-    {
-        [Index(0)]
-        public string? Region { get; set; }
-        [Index(1)]
-        public string? Obj_Name { get; set; }
-        [Index(2)]
-        public string? Obj_Type { get; set; }
-        [Index(3)]
-        public string? Obj_Number { get; set; }
-        [Index(4)]
-        public float? PPlus { get; set; }
-        [Index(5)]
-        public DateTime? Time { get; set; }
-        [Index(6)]
-        public float? PMinus { get; set; }
-
-        public bool IsValid()
-        {
-            return
-                Region != null
-                && Obj_Name != null
-                && Obj_Type != null
-                && Obj_Number != null
-                && PPlus != null
-                && Time != null
-                && PMinus != null;
         }
     }
 }

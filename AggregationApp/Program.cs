@@ -2,4 +2,10 @@
 using AggregationApp;
 
 Console.WriteLine("Hello, World!");
-await DataHandler.CollectData();
+
+var data = await DataHandler.CollectData();
+var aggregated = DataHandler.AggregateData(data);
+
+DatabaseHandler.AddNewEntries(aggregated);
+
+Console.WriteLine(DatabaseHandler.GetEntries());
