@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,7 @@ namespace AggregationApp
         public static void AddNewEntries(List<AggregatedData> list)
         {
             using AggregatedDataContext db = new();
+            db.Database.ExecuteSqlRaw("DELETE FROM AData");
             foreach (var data in list)
             {
                 db.Add(data);

@@ -8,4 +8,9 @@ var aggregated = DataHandler.AggregateData(data);
 
 DatabaseHandler.AddNewEntries(aggregated);
 
-Console.WriteLine(DatabaseHandler.GetEntries());
+var stored = DatabaseHandler.GetEntries();
+
+foreach (var item in stored)
+{
+    Console.WriteLine(item);
+}
