@@ -9,23 +9,21 @@ namespace AggregationApp
 {
     public class DatabaseHandler
     {
-        public static void AddNewEntries(List<AggregatedData> list)
+        public static void AddEntries(List<AggregatedData> list)
         {
             using AggregatedDataContext db = new();
 
-            if (CheckMigration())
-            {
-                Console.WriteLine("Up to date");
-                db.Database.ExecuteSqlRaw("DELETE FROM AData");
-            }
-            else
-            {
-                db.Database.Migrate();
-            }
-
             foreach (var data in list)
             {
-                db.Add(data);
+                if (db.AData.Find(data.Region) is AggregatedData ad)
+                {
+                    ad.PPlusSum = data.PPlusSum;
+                    ad.PMinusSum = data.PMinusSum;
+                }
+                else
+                {
+                    db.Add(data);
+                }
             }
             db.SaveChanges();
         }
@@ -36,27 +34,29 @@ namespace AggregationApp
             return db.AData.ToList();
         }
 
-        private static bool CheckMigration()
+        public static void CheckMigration()
         {
             using AggregatedDataContext db = new();
             var applied = db.Database.GetAppliedMigrations().ToArray();
             if (applied.Length == 0)
             {
-                return false;
+                db.Database.Migrate();
+                return;
             }
             var defined = db.Database.GetMigrations().ToArray();
             if (applied.Length != defined.Length)
             {
-                return false;
+                db.Database.Migrate();
+                return;
             }
             for (int i = 0; i < defined.Length; i++)
             {
                 if (defined[i] != applied[i])
                 {
-                    return false;
+                    db.Database.Migrate();
+                    return;
                 }
             }
-            return true;
         }
     }
 }

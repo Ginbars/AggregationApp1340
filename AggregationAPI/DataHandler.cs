@@ -25,11 +25,11 @@ namespace AggregationApp
             foreach (var path in dataPaths)
             {
                 Console.WriteLine("Downloading data");
-                Stream? data = await DataFetcher.DownloadData(path);
-                if (data == null)
+                Stream data = await DataFetcher.DownloadData(path);
+                if (data == Stream.Null)
                 {
-                    Console.WriteLine("Saatana");
-                    throw new ArgumentException("Invalid url path: ", nameof(path));
+                    Console.WriteLine("Encountered problem downloading from: " + path);
+                    continue;
                 }
 
                 List<ElectricityDataEntry> records = ConvertStream2List(data);

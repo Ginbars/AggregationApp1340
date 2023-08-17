@@ -26,10 +26,11 @@ app.MapGet("/aggregateddata", () =>
 .WithName("GetAggregatedData")
 .WithOpenApi();
 
-var data = await DataHandler.CollectData();
-var aggregated = DataHandler.AggregateData(data);
+DatabaseHandler.CheckMigration();
 
-DatabaseHandler.AddNewEntries(aggregated);
+List<ElectricityData> data = await DataHandler.CollectData();
+List<AggregatedData> aggregated = DataHandler.AggregateData(data);
+DatabaseHandler.AddEntries(aggregated);
 
 app.Run();
 

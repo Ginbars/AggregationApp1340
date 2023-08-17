@@ -10,7 +10,7 @@ namespace AggregationApp
     {
         static readonly HttpClient client = new();
 
-        public static async Task<Stream?> DownloadData(string url)
+        public static async Task<Stream> DownloadData(string url)
         {
             try
             {
@@ -21,7 +21,7 @@ namespace AggregationApp
             {
                 Console.WriteLine("\nException Caught!");
                 Console.WriteLine("Message :{0} ", e.Message);
-                return null;
+                return Stream.Null;
             }
         }
 
