@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AggregationAPI;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,9 @@ namespace AggregationApp
 {
     public class DatabaseHandler
     {
-        public static void AddEntries(List<AggregatedData> list)
+        static readonly ILogger _logger = ApiLogger.CreateLogger<DatabaseHandler>();
+
+        public static async Task AddEntries(List<AggregatedData> list)
         {
             using AggregatedDataContext db = new();
 
@@ -17,6 +20,7 @@ namespace AggregationApp
             {
                 if (db.AData.Find(data.Region) is AggregatedData ad)
                 {
+                    _logger.LogWarning("Existing entry for {region} found, updating values.", data.Region);
                     ad.PPlusSum = data.PPlusSum;
                     ad.PMinusSum = data.PMinusSum;
                 }
@@ -25,7 +29,15 @@ namespace AggregationApp
                     db.Add(data);
                 }
             }
-            db.SaveChanges();
+
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Encountered error while trying to add entries to database.");
+            }
         }
 
         public static List<AggregatedData> GetEntries()
@@ -38,14 +50,10 @@ namespace AggregationApp
         {
             using AggregatedDataContext db = new();
             var applied = db.Database.GetAppliedMigrations().ToArray();
-            if (applied.Length == 0)
-            {
-                db.Database.Migrate();
-                return;
-            }
             var defined = db.Database.GetMigrations().ToArray();
             if (applied.Length != defined.Length)
             {
+                _logger.LogWarning("Database migration inconsitencies found, migrating.");
                 db.Database.Migrate();
                 return;
             }
@@ -53,6 +61,7 @@ namespace AggregationApp
             {
                 if (defined[i] != applied[i])
                 {
+                    _logger.LogWarning("Database migration inconsitencies found, migrating.");
                     db.Database.Migrate();
                     return;
                 }

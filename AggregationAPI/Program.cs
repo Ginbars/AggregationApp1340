@@ -30,7 +30,7 @@ DatabaseHandler.CheckMigration();
 
 List<ElectricityData> data = await DataHandler.CollectData();
 List<AggregatedData> aggregated = DataHandler.AggregateData(data);
-DatabaseHandler.AddEntries(aggregated);
+await DatabaseHandler.AddEntries(aggregated);
 
 app.Run();
 

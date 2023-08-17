@@ -71,6 +71,5 @@ namespace AggregationApp
                 return null;
             }
         }
-
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AggregationAPI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,8 @@ namespace AggregationApp
 {
     public class DataFetcher
     {
+        static readonly ILogger _logger = ApiLogger.CreateLogger<DataFetcher>();
+
         static readonly HttpClient client = new();
 
         public static async Task<Stream> DownloadData(string url)
@@ -19,8 +22,7 @@ namespace AggregationApp
             }
             catch (HttpRequestException e)
             {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", e.Message);
+                _logger.LogError(e, "Exception caught while trying to download data from {url}", url);
                 return Stream.Null;
             }
         }

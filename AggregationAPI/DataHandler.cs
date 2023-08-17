@@ -4,13 +4,14 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AggregationAPI;
 using CsvHelper;
 
 namespace AggregationApp
 {
     public class DataHandler
     {
-        private static string[] dataPaths = new string[4]
+        static string[] _dataPaths = new string[4]
         {
             "https://data.gov.lt/dataset/1975/download/10763/2022-02.csv",
             "https://data.gov.lt/dataset/1975/download/10764/2022-03.csv",
@@ -18,26 +19,27 @@ namespace AggregationApp
             "https://data.gov.lt/dataset/1975/download/10766/2022-05.csv"
         };
 
+        static readonly ILogger _logger = ApiLogger.CreateLogger<DataHandler>();
+
         public static async Task<List<ElectricityData>> CollectData()
         {
             List<ElectricityData> dataList = new();
-
-            foreach (var path in dataPaths)
+            _logger.LogInformation("Starting data collection.");
+            foreach (var path in _dataPaths)
             {
-                Console.WriteLine("Downloading data");
                 Stream data = await DataFetcher.DownloadData(path);
                 if (data == Stream.Null)
                 {
-                    Console.WriteLine("Encountered problem downloading from: " + path);
+                    _logger.LogWarning("Encountered problem downloading from {path}", path);
                     continue;
                 }
 
                 List<ElectricityDataEntry> records = ConvertStream2List(data);
                 List<ElectricityData> processed = ProcessData(records);
                 dataList.AddRange(processed);
-                Console.WriteLine("Downloaded data");
             }
 
+            _logger.LogInformation("Finished collecting data.");
             return dataList;
         }
 
@@ -74,6 +76,7 @@ namespace AggregationApp
         private static List<ElectricityData> FilterInvalidData(List<ElectricityDataEntry> list)
         {
             List<ElectricityData> filtered = new();
+            int invalid = 0;
 
             foreach (var entry in list)
             {
@@ -82,7 +85,13 @@ namespace AggregationApp
                 {
                     filtered.Add(valid);
                 }
+                else
+                {
+                    invalid += 1;
+                }
             }
+
+            _logger.LogInformation("Finished filtering data with {count} invalid entries found.", invalid);
 
             return filtered;
         }
