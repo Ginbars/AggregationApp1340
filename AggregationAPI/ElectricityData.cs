@@ -22,6 +22,18 @@ namespace AggregationApp
             Time = time;
             PMinus = pMinus;
         }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is ElectricityData ed
+                && (ed.Region, ed.Obj_Name, ed.Obj_Type, ed.Obj_Number, ed.PPlus, ed.Time, ed.PMinus)
+                .Equals((Region, Obj_Name, Obj_Type, Obj_Number, PPlus, Time, PMinus));
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Region, Obj_Name, Obj_Type, Obj_Number, PPlus, Time, PMinus);
+        }
     }
 
     public class ElectricityDataEntry
@@ -41,24 +53,12 @@ namespace AggregationApp
         [Index(6)]
         public float? PMinus { get; set; }
 
-        public bool IsValid()
-        {
-            return
-                Region != null
-                && Obj_Name != null
-                && Obj_Type != null
-                && Obj_Number != null
-                && PPlus != null
-                && Time != null
-                && PMinus != null;
-        }
-
         public ElectricityData? TryConvertToValid()
         {
-            if (Region is string r
-                && Obj_Name is string n
-                && Obj_Type is string t
-                && Obj_Number is string nr
+            if (Region is string r && r.Length > 0
+                && Obj_Name is string n && n.Length > 0
+                && Obj_Type is string t && t.Length > 0
+                && Obj_Number is string nr && nr.Length > 0
                 && PPlus is float pp
                 && Time is DateTime tm
                 && PMinus is float pm

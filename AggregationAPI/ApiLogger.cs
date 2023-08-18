@@ -1,4 +1,4 @@
-﻿namespace AggregationAPI
+﻿namespace AggregationApp
 {
     public static class ApiLogger
     {

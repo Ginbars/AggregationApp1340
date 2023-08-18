@@ -1,11 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Reflection.Metadata;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AggregationApp
 {
@@ -41,9 +35,14 @@ namespace AggregationApp
             return this;
         }
 
-        public override string ToString()
+        public override bool Equals(object? obj)
         {
-            return Region + " - P+: " + PPlusSum + ", P-: " + PMinusSum;
+            return obj is AggregatedData ad && (ad.Region, ad.PPlusSum, ad.PMinusSum).Equals((Region, PPlusSum, PMinusSum));
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Region, PPlusSum, PMinusSum);
         }
     }
 }

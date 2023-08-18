@@ -1,10 +1,4 @@
-﻿using AggregationAPI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace AggregationApp
 {
     public class DataFetcher
@@ -15,17 +9,12 @@ namespace AggregationApp
 
         public static async Task<Stream> DownloadData(string url)
         {
-            try
-            {
-                Stream data = await client.GetStreamAsync(url);
-                return data;
-            }
-            catch (HttpRequestException e)
-            {
-                _logger.LogError(e, "Exception caught while trying to download data from {url}", url);
-                return Stream.Null;
-            }
+            _logger.LogInformation("Starting data download from {url}.", url);
+            var response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            Stream data = await response.Content.ReadAsStreamAsync();
+            _logger.LogInformation("Finished data downloading {url}.", url);
+            return data;
         }
-
     }
 }

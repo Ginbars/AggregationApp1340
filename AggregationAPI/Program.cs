@@ -1,5 +1,15 @@
 using AggregationApp;
 
+ILogger _logger = ApiLogger.CreateLogger<Program>();
+string[] _dataPaths = new string[4]
+{
+    "https://data.gov.lt/dataset/1975/download/10763/2022-02.csv",
+    "https://data.gov.lt/dataset/1975/download/10764/2022-03.csv",
+    "https://data.gov.lt/dataset/1975/download/10765/2022-04.csv",
+    "https://data.gov.lt/dataset/1975/download/10766/2022-05.csv"
+};
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -27,10 +37,28 @@ app.MapGet("/aggregateddata", () =>
 .WithOpenApi();
 
 DatabaseHandler.CheckMigration();
+var electricityData = new List<ElectricityData>();
 
-List<ElectricityData> data = await DataHandler.CollectData();
-List<AggregatedData> aggregated = DataHandler.AggregateData(data);
+foreach (var url in _dataPaths)
+{
+    try
+    {
+        var data = await DataFetcher.DownloadData(url);
+        var processed = DataHandler.ProcessData(data);
+        DataHandler.FilterByObjName(processed, "Butas");
+        electricityData.AddRange(processed);
+    }
+    catch (Exception e)
+    {
+        _logger.LogError(e, "Exception caught while trying to download data from {url}", url);
+        continue;
+    }
+}
+
+_logger.LogInformation("Finished collecting and processing data");
+var aggregated = DataHandler.AggregateData(electricityData);
 await DatabaseHandler.AddEntries(aggregated);
+
 
 app.Run();
 
