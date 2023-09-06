@@ -6,10 +6,8 @@ namespace AggregationApp
     {
         static readonly ILogger _logger = ApiLogger.CreateLogger<DatabaseHandler>();
 
-        public static async Task AddEntries(List<AggregatedData> list)
+        public static async Task AddEntries(List<AggregatedData> list, AggregatedDataContext db)
         {
-            using AggregatedDataContext db = new();
-
             foreach (var data in list)
             {
                 if (db.AData.Find(data.Region) is AggregatedData ad)
@@ -35,15 +33,13 @@ namespace AggregationApp
             }
         }
 
-        public static List<AggregatedData> GetEntries()
+        public static Task<List<AggregatedData>> GetEntries(AggregatedDataContext db)
         {
-            using AggregatedDataContext db = new();
-            return db.AData.ToList();
+            return db.AData.ToListAsync();
         }
 
-        public static void CheckMigration()
+        public static void CheckMigration(AggregatedDataContext db)
         {
-            using AggregatedDataContext db = new();
             var applied = db.Database.GetAppliedMigrations().ToArray();
             var defined = db.Database.GetMigrations().ToArray();
             if (applied.Length != defined.Length)

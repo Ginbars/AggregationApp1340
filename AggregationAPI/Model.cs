@@ -1,28 +1,22 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AggregationApp
 {
     public class AggregatedDataContext : DbContext
     {
-        public DbSet<AggregatedData> AData { get; set; }
+        public DbSet<AggregatedData> AData => Set<AggregatedData>();
 
-        public string DbPath { get; }
-
-        public AggregatedDataContext()
-        {
-            var folder = Environment.SpecialFolder.LocalApplicationData;
-            var path = Environment.GetFolderPath(folder);
-            DbPath = System.IO.Path.Join(path, "edata.db");
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite($"Data Source={DbPath}");
+        public AggregatedDataContext(DbContextOptions<AggregatedDataContext> options) : base(options)
+        { }
     }
 
     public class AggregatedData
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public required string Region { get; set; }
         public float PPlusSum { get; set; }
         public float PMinusSum { get; set; }

@@ -1,4 +1,5 @@
 using AggregationApp;
+using Microsoft.EntityFrameworkCore;
 
 ILogger _logger = ApiLogger.CreateLogger<Program>();
 string[] _dataPaths = new string[4]
@@ -12,14 +13,12 @@ string[] _dataPaths = new string[4]
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDbContext<AggregatedDataContext>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -29,36 +28,40 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 
-app.MapGet("/aggregateddata", () =>
+app.MapGet("/aggregateddata", async (AggregatedDataContext db) =>
 {
-    return DatabaseHandler.GetEntries();
+    return await DatabaseHandler.GetEntries(db);
 })
 .WithName("GetAggregatedData")
 .WithOpenApi();
 
-DatabaseHandler.CheckMigration();
-var electricityData = new List<ElectricityData>();
-
-foreach (var url in _dataPaths)
+using (var scope = app.Services.CreateScope())
 {
-    try
+    var db = scope.ServiceProvider.GetRequiredService<AggregatedDataContext>();
+
+    DatabaseHandler.CheckMigration(db);
+    var electricityData = new List<ElectricityData>();
+
+    foreach (var url in _dataPaths)
     {
-        var data = await DataFetcher.DownloadData(url);
-        var processed = DataHandler.ProcessData(data);
-        DataHandler.FilterByObjName(processed, "Butas");
-        electricityData.AddRange(processed);
+        try
+        {
+            var data = await DataFetcher.DownloadData(url);
+            var processed = DataHandler.ProcessData(data);
+            DataHandler.FilterByObjName(processed, "Butas");
+            electricityData.AddRange(processed);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Exception caught while trying to download data from {url}", url);
+            continue;
+        }
     }
-    catch (Exception e)
-    {
-        _logger.LogError(e, "Exception caught while trying to download data from {url}", url);
-        continue;
-    }
+
+    _logger.LogInformation("Finished collecting and processing data");
+    var aggregated = DataHandler.AggregateData(electricityData);
+    await DatabaseHandler.AddEntries(aggregated, db);
 }
-
-_logger.LogInformation("Finished collecting and processing data");
-var aggregated = DataHandler.AggregateData(electricityData);
-await DatabaseHandler.AddEntries(aggregated);
-
 
 app.Run();
 

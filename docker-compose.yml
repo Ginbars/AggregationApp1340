@@ -1,0 +1,22 @@
+version: '3.4'
+
+services:
+  sqlserver:
+    container_name: DataBaseContainer
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+        - 1434:1434
+    environment:
+        - ACCEPT_EULA=Y
+        - MSSQL_SA_PASSWORD=sTrOnG1_pAsSwOrD2
+
+  aggregationapi:
+    container_name: ApiContainer
+    image: ${DOCKER_REGISTRY-}aggregationapi
+    ports:
+         - 8001:1234
+    build:
+      context: .
+      dockerfile: AggregationAPI/Dockerfile
+    depends_on:
+        - sqlserver

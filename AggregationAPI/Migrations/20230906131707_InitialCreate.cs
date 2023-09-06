@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace AggregationApp.Migrations
+namespace AggregationAPI.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -14,9 +14,9 @@ namespace AggregationApp.Migrations
                 name: "AData",
                 columns: table => new
                 {
-                    Region = table.Column<string>(type: "TEXT", nullable: false),
-                    PPlusSum = table.Column<float>(type: "REAL", nullable: false),
-                    PMinusSum = table.Column<float>(type: "REAL", nullable: false)
+                    Region = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    PPlusSum = table.Column<float>(type: "real", nullable: false),
+                    PMinusSum = table.Column<float>(type: "real", nullable: false)
                 },
                 constraints: table =>
                 {
