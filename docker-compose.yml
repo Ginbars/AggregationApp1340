@@ -5,7 +5,7 @@ services:
     container_name: DataBaseContainer
     image: mcr.microsoft.com/mssql/server:2022-latest
     ports:
-        - 1434:1434
+        - 8002:1434
     environment:
         - ACCEPT_EULA=Y
         - MSSQL_SA_PASSWORD=sTrOnG1_pAsSwOrD2

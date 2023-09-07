@@ -7,6 +7,16 @@ namespace AggregationApp
     {
         static readonly ILogger _logger = ApiLogger.CreateLogger<DataHandler>();
 
+        public static async Task<Stream> DownloadData(string url, HttpClient client)
+        {
+            _logger.LogInformation("Starting data download from {url}.", url);
+            var response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            Stream data = await response.Content.ReadAsStreamAsync();
+            _logger.LogInformation("Finished data downloading {url}.", url);
+            return data;
+        }
+
         public static List<ElectricityData> ProcessData(Stream data)
         {
             var entries = ConvertStream2List(data);

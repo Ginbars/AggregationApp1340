@@ -1,7 +1,6 @@
 using AggregationApp;
 using Microsoft.EntityFrameworkCore;
 
-ILogger _logger = ApiLogger.CreateLogger<Program>();
 string[] _dataPaths = new string[4]
 {
     "https://data.gov.lt/dataset/1975/download/10763/2022-02.csv",
@@ -9,6 +8,7 @@ string[] _dataPaths = new string[4]
     "https://data.gov.lt/dataset/1975/download/10765/2022-04.csv",
     "https://data.gov.lt/dataset/1975/download/10766/2022-05.csv"
 };
+ILogger _logger = ApiLogger.CreateLogger<Program>();
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,7 +46,7 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
-            var data = await DataFetcher.DownloadData(url);
+            var data = await DataHandler.DownloadData(url, new HttpClient());
             var processed = DataHandler.ProcessData(data);
             DataHandler.FilterByObjName(processed, "Butas");
             electricityData.AddRange(processed);

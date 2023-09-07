@@ -57,6 +57,7 @@ namespace AggregationApp
                     return;
                 }
             }
+            _logger.LogInformation("Database migration is consistent.");
         }
     }
 }
