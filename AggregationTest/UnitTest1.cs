@@ -1,12 +1,36 @@
 using AggregationApp;
 using CsvHelper;
+using Moq;
+using Moq.Protected;
 using System.Globalization;
+using System.Text;
 
 namespace AggregationTest
 {
     [TestClass]
     public class UnitTest1
     {
+        [TestMethod]
+        public async Task DownloadFromUrl_GetDataStream()
+        {
+            var handlerMock = new Mock<HttpMessageHandler>();
+            handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = System.Net.HttpStatusCode.OK,
+                    Content = new StringContent("electricity data")
+                });
+            
+            using (var expected = new MemoryStream(Encoding.UTF8.GetBytes("electricity data")))
+            {
+                var result = await DataHandler.DownloadData("http://test.com/", new HttpClient(handlerMock.Object));
+
+                Assert.AreEqual(expected.ToString(), result.ToString());
+            }
+
+        }
+
         [TestMethod]
         public void ProcessStream_ReturnsElectricityDataList()
         {
@@ -75,15 +99,18 @@ namespace AggregationTest
                 new ElectricityDataEntry() { Region = "a", Obj_Name = "a", Obj_Number = "a", Obj_Type = "a", PPlus = 0f, Time = new DateTime() },
             };
 
-            var memStream = new MemoryStream();
-            var writer = new StreamWriter(memStream);
-            var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+            var outStream = new MemoryStream();
+            using var tempStream = new MemoryStream();
+            using var writer = new StreamWriter(tempStream);
+            using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
             
             csv.WriteRecords(entries);
             csv.Flush();
-            memStream.Position = 0;
+            tempStream.Position = 0;
+            tempStream.CopyTo(outStream);
+            outStream.Position = 0;
             
-            return memStream;
+            return outStream;
         }
     }
 }
